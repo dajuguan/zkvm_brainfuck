@@ -1,6 +1,5 @@
-use crate::code;
+use bf_vm::code;
 use halo2_proofs::halo2curves::bn256::Fr;
-use alloc::vec::Vec;
 
 #[test]
 fn test_compile_neptune() {

@@ -1,0 +1,17 @@
+[package]
+name = "bf_zk"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+# bf_vm
+bf_vm = {path = "../bf_vm"}
+# halo2
+halo2_proofs = { git = "https://github.com/privacy-scaling-explorations/halo2.git", rev = "be955686f86eb618f55d2320c0e042485b313d22"}
+halo2curves = "0.4.0"
+# halo2_proofs = { git = "https://github.com/zcash/halo2.git", rev = "a898d65ae3ad3d41987666f6a03cfc15edae01c4"}
+plotters = { version = "0.3.0", default-features = true, optional = true }
+tabbycat = { version = "0.1", features = ["attributes"], optional = true }
+

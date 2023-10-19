@@ -7,4 +7,4 @@ pub mod code;
 pub mod interpreter;
 pub mod matrix;
 
-mod tests;
+// mod tests;

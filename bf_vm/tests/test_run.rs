@@ -1,9 +1,9 @@
-use crate::code;
-use crate::interpreter::Interpreter;
+use bf_vm::code;
+use bf_vm::interpreter::Interpreter;
 
 #[test]
 fn test_run_hello_world() {
-    let program = code::compile(include_bytes!("../../../res/hello_world.bf").to_vec());
+    let program = code::compile(include_bytes!("../../res/hello_world.bf").to_vec());
     let mut vm = Interpreter::new();
     vm.set_code(program);
     vm.run();
@@ -12,7 +12,7 @@ fn test_run_hello_world() {
 
 #[test]
 fn test_run_neptune() {
-    let program = code::compile(include_bytes!("../../../res/neptune_tutorial.bf").to_vec());
+    let program = code::compile(include_bytes!("../../res/neptune_tutorial.bf").to_vec());
     let mut vm = Interpreter::new();
     vm.set_code(program);
     vm.set_input(code::easygen("a"));

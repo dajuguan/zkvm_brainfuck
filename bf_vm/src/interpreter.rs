@@ -5,7 +5,6 @@ use core::convert::From;
 use halo2_proofs::arithmetic::{Field};
 use halo2_proofs::halo2curves::{bn256::Fr};
 use halo2curves::ff::PrimeField;
-// use halo2_proofs::pa::arithmetic::{Coordinates, CurveAffine, CurveExt, FieldExt};
 
 #[derive(Clone, Debug, Default)]
 pub struct Register {
@@ -18,32 +17,34 @@ pub struct Register {
     pub memory_value_inverse: Fr,
 }
 
-
-fn get_lower_128(f: Fr) -> u128 {
-    let to_limbs = |e: Fr| {
-        let repr = e.to_repr();
-        let repr = repr.as_ref();
-        let tmp0 = u64::from_le_bytes(repr[0..8].try_into().unwrap());
-        let tmp1 = u64::from_le_bytes(repr[8..16].try_into().unwrap());
-        let tmp2 = u64::from_le_bytes(repr[16..24].try_into().unwrap());
-        let tmp3 = u64::from_le_bytes(repr[24..32].try_into().unwrap());
-        [tmp0, tmp1, tmp2, tmp3]
-    };
-
-    let e = to_limbs(f);
-    u128::from(e[0]) | (u128::from(e[1]) << 64)
+trait FieldExt {
+    fn get_lower_128(&self) -> u128;
 }
 
-
-
+impl FieldExt for Fr {
+    fn get_lower_128(&self) -> u128 {
+        let to_limbs = |e: &Fr| {
+            let repr = e.to_repr();
+            let repr = repr.as_ref();
+            let tmp0 = u64::from_le_bytes(repr[0..8].try_into().unwrap());
+            let tmp1 = u64::from_le_bytes(repr[8..16].try_into().unwrap());
+            let tmp2 = u64::from_le_bytes(repr[16..24].try_into().unwrap());
+            let tmp3 = u64::from_le_bytes(repr[24..32].try_into().unwrap());
+            [tmp0, tmp1, tmp2, tmp3]
+        };
+    
+        let e = to_limbs(self);
+        u128::from(e[0]) | (u128::from(e[1]) << 64)
+    }
+}
 
 impl Register {
     fn ip(&self) -> usize {
-        get_lower_128(self.instruction_pointer)  as usize
+        self.instruction_pointer.get_lower_128()  as usize
     }
 
     fn mp(&self) -> usize {
-        get_lower_128(self.memory_pointer)  as usize
+        self.memory_pointer.get_lower_128()  as usize
     }
 }
 
@@ -106,7 +107,7 @@ impl Interpreter {
             self.matrix.processor_matrix.push(self.register.clone());
             self.matrix.instruction_matrix.push(InstructionMatrixRow::from(&self.register));
             self.matrix.memory_matrix.push(MemoryMatrixRow::from(&self.register));
-            match get_lower_128(self.register.current_instruction) as u8 {
+            match self.register.current_instruction.get_lower_128() as u8 {
                 code::SHL => {
                     self.register.memory_pointer -= Fr::one();
                     self.register.instruction_pointer += Fr::one();
