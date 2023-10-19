@@ -24,11 +24,12 @@ impl MainConfig {
         MainConfig { program_conf, processor_conf, mem_conf, ins_conf }
     }
 
-    fn assign(&mut self, mut layouter: impl Layouter<Fr>,matrix: &Matrix) {
-        self.program_conf.load(layouter.namespace(|| "program table"), matrix);
-        self.processor_conf.load(layouter.namespace(|| "processor table"), matrix);
-        self.mem_conf.load(layouter.namespace(|| "memory table"), matrix);
-        self.ins_conf.load(layouter.namespace(|| "instuction table"), matrix)
+    fn assign(&mut self, mut layouter: impl Layouter<Fr>,matrix: &Matrix) -> Result<(), Error> {
+        self.program_conf.load(layouter.namespace(|| "program layouter"), matrix)?;
+        self.processor_conf.load(layouter.namespace(|| "processor layouter"), matrix)?;
+        self.mem_conf.load(layouter.namespace(|| "memory layouter"), matrix)?;
+        self.ins_conf.load(layouter.namespace(|| "instuction layouter"), matrix)?;
+        Ok(())
     }
 }
 
