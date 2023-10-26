@@ -38,19 +38,18 @@ impl MemoryTable {
             let cur_clk = meta.query_advice(clk, Rotation::cur());
             let next_clk = meta.query_advice(clk, Rotation::next());
 
-
             // M0: memory pointer either increase by one or by zero
             let m0 = (next_mp.clone() - cur_mp.clone() - one.clone())
                 * (next_mp.clone() - cur_mp.clone());
             // M1: If mp increases by 1, then mv must be set to zero
             let m1 = (next_mp.clone() - cur_mp.clone()) * next_mv.clone();
-            // M2: when the memory pointer does not change: 
+            // M2: when the memory pointer does not change:
             // a) memory value remains the same or b) the cycle count only increases by one
             let m2 = (next_mp.clone() - cur_mp.clone() - one.clone())
-            * (cur_mv.clone() - next_mv.clone())
-            * (next_clk - cur_clk.clone() - one.clone());
+                * (cur_mv.clone() - next_mv.clone())
+                * (next_clk - cur_clk.clone() - one.clone());
 
-            Constraints::with_selector(sm, vec![m0, m1,m2])
+            Constraints::with_selector(sm, vec![m0, m1, m2])
         });
 
         MemoryTable {
@@ -62,17 +61,35 @@ impl MemoryTable {
     }
     pub fn load(&mut self, mut layouter: impl Layouter<Fr>, matrix: &Matrix) -> Result<(), Error> {
         let mem_mat = &matrix.memory_matrix;
-        layouter.assign_region( || "mem table", |mut region|{
-            for i in 0..mem_mat.len() {
-                if i < mem_mat.len() - 1 {
-                    self.s_m.enable(&mut region, i)?;
+        layouter.assign_region(
+            || "mem table",
+            |mut region| {
+                for i in 0..mem_mat.len() {
+                    if i < mem_mat.len() - 1 {
+                        self.s_m.enable(&mut region, i)?;
+                    }
+                    region.assign_advice(
+                        || "clk cell",
+                        self.clk,
+                        i,
+                        || Value::known(mem_mat[i].cycle),
+                    )?;
+                    region.assign_advice(
+                        || "mem pointer cell",
+                        self.memory_pointer,
+                        i,
+                        || Value::known(mem_mat[i].memory_pointer),
+                    )?;
+                    region.assign_advice(
+                        || "mem value cell",
+                        self.memory_value,
+                        i,
+                        || Value::known(mem_mat[i].memory_value),
+                    )?;
                 }
-                region.assign_advice(|| "clk cell", self.clk, i, || Value::known(mem_mat[i].cycle))?;
-                region.assign_advice(|| "mem pointer cell", self.memory_pointer, i, || Value::known(mem_mat[i].memory_pointer))?;
-                region.assign_advice(|| "mem value cell", self.memory_value, i, || Value::known(mem_mat[i].memory_value))?;
-            }
-            Ok(())
-        })?;
+                Ok(())
+            },
+        )?;
         Ok(())
     }
 }

@@ -11,10 +11,9 @@ pub struct Matrix {
     pub instruction_matrix: Vec<InstructionMatrixRow>,
     pub memory_matrix: Vec<MemoryMatrixRow>,
     pub input_matrix: Vec<Fr>,
-    pub output_matrix: Vec<Fr>,
+    pub output_matrix: Vec<IOMatrixRow>,
     pub program: Vec<InstructionMatrixRow>,
 }
-
 
 #[derive(Debug, Clone)]
 pub struct InstructionMatrixRow {
@@ -49,4 +48,10 @@ impl From<&Register> for MemoryMatrixRow {
             interweave_indicator: Fr::zero(),
         }
     }
+}
+
+#[derive(Debug)]
+pub struct IOMatrixRow {
+    pub cycle: Fr,
+    pub value: Fr,
 }

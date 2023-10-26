@@ -5,8 +5,8 @@ use halo2_proofs::halo2curves::bn256::Fr;
 fn test_compile_neptune() {
     let output = code::compile("++>,<[>+.<-]".as_bytes().to_vec());
     let expect: Vec<Fr> = vec![
-        '+' as u64, '+' as u64, '>' as u64, ',' as u64, '<' as u64, '[' as u64, 14, '>' as u64, '+' as u64, '.' as u64,
-        '<' as u64, '-' as u64, ']' as u64, 7,
+        '+' as u64, '+' as u64, '>' as u64, ',' as u64, '<' as u64, '[' as u64, 14, '>' as u64,
+        '+' as u64, '.' as u64, '<' as u64, '-' as u64, ']' as u64, 7,
     ]
     .iter()
     .map(|&x| Fr::from(x))

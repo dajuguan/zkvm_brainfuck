@@ -30,7 +30,14 @@ fn test_run_hello_world() {
     let mut vm = Interpreter::new();
     vm.set_code(program);
     vm.run();
-    assert_eq!(vm.matrix.output_matrix, code::easygen("Hello World!\n"));
+    assert_eq!(
+        vm.matrix
+            .output_matrix
+            .iter()
+            .map(|v| v.value)
+            .collect::<Vec<Fr>>(),
+        code::easygen("Hello World!\n")
+    );
 }
 
 #[test]
@@ -44,7 +51,14 @@ fn test_run_neptune() {
     assert_eq!(vm.matrix.memory_matrix.len(), 19);
     assert_eq!(vm.matrix.instruction_matrix.len(), 33);
     assert_eq!(vm.matrix.input_matrix, code::easygen("a"));
-    assert_eq!(vm.matrix.output_matrix, code::easygen("bc"));
+    assert_eq!(
+        vm.matrix
+            .output_matrix
+            .iter()
+            .map(|v| v.value)
+            .collect::<Vec<Fr>>(),
+        code::easygen("bc")
+    );
 
     let mut program = vec![];
     for p in vm.matrix.program {
@@ -71,5 +85,5 @@ fn test_run_neptune() {
         [12, 93, 7],
         [7, 62, 43],
     ];
-    assert_eq!(program , expect);
+    assert_eq!(program, expect);
 }

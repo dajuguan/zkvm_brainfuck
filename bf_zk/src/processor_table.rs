@@ -1,5 +1,6 @@
 use crate::{
     is_zero::{IsZeroChip, IsZeroConfig},
+    range_table::{RangeTable, RangeTableConfig},
     utilts::*,
 };
 use bf_vm::matrix::Matrix;
@@ -22,6 +23,7 @@ pub struct ProcessorTable<const RANGE: usize> {
     pub mv_iszero_config: IsZeroConfig<Fr>,
     pub s_p: Selector, //selector for processor table
     pub s_b: Selector, //selector for boundary constraints
+    range_config: RangeTableConfig<RANGE>,
 }
 
 fn create_deselecor(ci: Expression<Fr>, op: u8) -> Expression<Fr> {
@@ -51,6 +53,8 @@ impl<const RANGE: usize> ProcessorTable<RANGE> {
         let memory_value_inverse = cs.advice_column();
         let s_p = cs.selector();
         let s_b = cs.selector();
+
+        let range_config = RangeTableConfig::configure(cs);
 
         let mv_iszero_config = IsZeroChip::configure(
             cs,
@@ -96,6 +100,11 @@ impl<const RANGE: usize> ProcessorTable<RANGE> {
                     mv_inv.clone() * (mv * mv_inv - one.clone()),
                 ],
             )
+        });
+
+        cs.lookup("Range-Check: mv are within 0-255", |meta| {
+            let mv = meta.query_advice(memory_value, Rotation::cur());
+            vec![(mv, range_config.table)]
         });
 
         cs.create_gate("instruction constraints", |meta| {
@@ -197,11 +206,14 @@ impl<const RANGE: usize> ProcessorTable<RANGE> {
             mv_iszero_config,
             s_p,
             s_b,
+            range_config,
         }
     }
     pub fn load(&mut self, mut layouter: impl Layouter<Fr>, matrix: &Matrix) -> Result<(), Error> {
         let processor_mat = &matrix.processor_matrix;
         let iszero_chip = IsZeroChip::construct(self.mv_iszero_config.clone());
+
+        self.range_config.load_table(&mut layouter)?;
 
         layouter.assign_region(
             || "processor table",
@@ -261,10 +273,12 @@ impl<const RANGE: usize> ProcessorTable<RANGE> {
                         Value::known(processor_mat[i].memory_value),
                     )?;
                 }
+
                 Ok(())
             },
         )?;
 
+       
         Ok(())
     }
 }

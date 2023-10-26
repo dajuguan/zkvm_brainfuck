@@ -1,8 +1,8 @@
 extern crate alloc;
 
-use halo2_proofs::halo2curves::bn256::Fr;
 use alloc::vec::Vec;
 use core::convert::From;
+use halo2_proofs::halo2curves::bn256::Fr;
 
 pub const SHL: u8 = 0x3C;
 pub const SHR: u8 = 0x3E;
@@ -14,7 +14,10 @@ pub const LB: u8 = 0x5B;
 pub const RB: u8 = 0x5D;
 
 pub fn easygen(code: &str) -> Vec<Fr> {
-    code.as_bytes().iter().map(|&x| Fr::from(x as u64)).collect()
+    code.as_bytes()
+        .iter()
+        .map(|&x| Fr::from(x as u64))
+        .collect()
 }
 
 /**
@@ -46,5 +49,8 @@ pub fn compile_to_u16(code: Vec<u8>) -> Vec<u16> {
 }
 
 pub fn compile(code: Vec<u8>) -> Vec<Fr> {
-    compile_to_u16(code).into_iter().map(|x| Fr::from(x as u64)).collect()
+    compile_to_u16(code)
+        .into_iter()
+        .map(|x| Fr::from(x as u64))
+        .collect()
 }

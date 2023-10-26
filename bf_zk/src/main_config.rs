@@ -2,8 +2,10 @@ use std::marker::PhantomData;
 
 use crate::instruction_table::InstructionTable;
 use crate::memory_table::MemoryTable;
+use crate::output_table::OutputTable;
 use crate::processor_table::ProcessorTable;
 use crate::program_table::ProgramTable;
+use crate::utilts::PUTCHAR;
 use bf_vm::matrix::Matrix;
 use halo2_proofs::arithmetic::Field;
 use halo2_proofs::{circuit::*, halo2curves::bn256::Fr, plonk::*, poly::Rotation};
@@ -14,6 +16,7 @@ pub struct MainConfig<const RANGE: usize> {
     processor_conf: ProcessorTable<RANGE>,
     mem_conf: MemoryTable,
     ins_conf: InstructionTable,
+    output_conf: OutputTable,
 }
 
 impl<const RANGE: usize> MainConfig<RANGE> {
@@ -22,6 +25,7 @@ impl<const RANGE: usize> MainConfig<RANGE> {
         let processor_conf = ProcessorTable::configure(meta);
         let mem_conf = MemoryTable::configure(meta);
         let ins_conf = InstructionTable::configure(meta);
+        let output_conf = OutputTable::configure(meta);
 
         meta.lookup_any("program lookup", |meta| {
             let program_ci = meta.query_fixed(program_conf.current_instruction, Rotation::cur());
@@ -42,11 +46,9 @@ impl<const RANGE: usize> MainConfig<RANGE> {
 
         meta.lookup_any("memory lookup", |meta| {
             let mem_clk = meta.query_advice(mem_conf.clk, Rotation::cur());
-            let processor_clk =
-                meta.query_advice(processor_conf.clk, Rotation::cur());
+            let processor_clk = meta.query_advice(processor_conf.clk, Rotation::cur());
             let mem_mp = meta.query_advice(mem_conf.memory_pointer, Rotation::cur());
-            let processor_mp =
-                meta.query_advice(processor_conf.memory_pointer, Rotation::cur());
+            let processor_mp = meta.query_advice(processor_conf.memory_pointer, Rotation::cur());
             let mem_mv = meta.query_advice(mem_conf.memory_value, Rotation::cur());
             let processor_mv = meta.query_advice(processor_conf.memory_value, Rotation::cur());
 
@@ -57,11 +59,27 @@ impl<const RANGE: usize> MainConfig<RANGE> {
             ]
         });
 
+        meta.lookup_any("output lookup", |meta| {
+            let processor_clk = meta.query_advice(processor_conf.clk, Rotation::cur());
+            let output_clk = meta.query_advice(output_conf.clk, Rotation::cur());
+            let processor_ci =
+                meta.query_advice(processor_conf.current_instruction, Rotation::cur());
+            let output_ci = meta.query_fixed(output_conf.ci, Rotation::cur());
+            let processor_mv = meta.query_advice(processor_conf.memory_value, Rotation::cur());
+            let output_val = meta.query_instance(output_conf.value, Rotation::cur());
+            vec![
+                (output_clk, processor_clk),
+                (output_ci, processor_ci),
+                (output_val, processor_mv),
+            ]
+        });
+
         MainConfig {
             program_conf,
             processor_conf,
             mem_conf,
             ins_conf,
+            output_conf,
         }
     }
 
@@ -74,6 +92,8 @@ impl<const RANGE: usize> MainConfig<RANGE> {
             .load(layouter.namespace(|| "memory layouter"), matrix)?;
         self.ins_conf
             .load(layouter.namespace(|| "instuction layouter"), matrix)?;
+        self.output_conf
+            .load(layouter.namespace(|| "output layouter"), matrix)?;
         Ok(())
     }
 }

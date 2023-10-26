@@ -1,9 +1,9 @@
 use crate::code;
-use crate::matrix::{InstructionMatrixRow, Matrix, MemoryMatrixRow};
+use crate::matrix::{IOMatrixRow, InstructionMatrixRow, Matrix, MemoryMatrixRow};
 use alloc::vec::Vec;
 use core::convert::From;
-use halo2_proofs::arithmetic::{Field};
-use halo2_proofs::halo2curves::{bn256::Fr};
+use halo2_proofs::arithmetic::Field;
+use halo2_proofs::halo2curves::bn256::Fr;
 use halo2curves::ff::PrimeField;
 
 #[derive(Clone, Debug, Default)]
@@ -32,7 +32,7 @@ impl FieldExt for Fr {
             let tmp3 = u64::from_le_bytes(repr[24..32].try_into().unwrap());
             [tmp0, tmp1, tmp2, tmp3]
         };
-    
+
         let e = to_limbs(self);
         u128::from(e[0]) | (u128::from(e[1]) << 64)
     }
@@ -40,11 +40,11 @@ impl FieldExt for Fr {
 
 impl Register {
     fn ip(&self) -> usize {
-        self.instruction_pointer.get_lower_128()  as usize
+        self.instruction_pointer.get_lower_128() as usize
     }
 
     fn mp(&self) -> usize {
-        self.memory_pointer.get_lower_128()  as usize
+        self.memory_pointer.get_lower_128() as usize
     }
 }
 
@@ -73,10 +73,9 @@ impl Interpreter {
         self.code = code.clone();
         let mut program = vec![];
         for i in 0..code.len() {
-           
-            if i > 0 && (code[i-1] == ('[' as u64).into() || code[i-1] == (']' as u64).into()) {
+            if i > 0 && (code[i - 1] == ('[' as u64).into() || code[i - 1] == (']' as u64).into()) {
                 let ip = code[i].get_lower_128() as usize;
-                let current_instruction = if  ip == code.len() {
+                let current_instruction = if ip == code.len() {
                     Fr::from(0)
                 } else {
                     code[ip]
@@ -88,28 +87,26 @@ impl Interpreter {
                     code[ip + 1]
                 };
 
-                program.push(InstructionMatrixRow{
+                program.push(InstructionMatrixRow {
                     instruction_pointer: code[i],
                     current_instruction,
-                    next_instruction
+                    next_instruction,
                 });
                 continue;
             }
-            let next_instruction = if i == code.len() -1 {
+            let next_instruction = if i == code.len() - 1 {
                 Fr::from(0)
             } else {
-                code[i+1]
+                code[i + 1]
             };
-            program.push(InstructionMatrixRow{
+            program.push(InstructionMatrixRow {
                 instruction_pointer: Fr::from(i as u64),
                 current_instruction: code[i],
-                next_instruction
+                next_instruction,
             });
         }
 
         self.matrix.program = program
-
-
     }
 
     pub fn set_input(&mut self, input: Vec<Fr>) {
@@ -143,8 +140,12 @@ impl Interpreter {
                 break;
             }
             self.matrix.processor_matrix.push(self.register.clone());
-            self.matrix.instruction_matrix.push(InstructionMatrixRow::from(&self.register));
-            self.matrix.memory_matrix.push(MemoryMatrixRow::from(&self.register));
+            self.matrix
+                .instruction_matrix
+                .push(InstructionMatrixRow::from(&self.register));
+            self.matrix
+                .memory_matrix
+                .push(MemoryMatrixRow::from(&self.register));
             match self.register.current_instruction.get_lower_128() as u8 {
                 code::SHL => {
                     self.register.memory_pointer -= Fr::one();
@@ -161,7 +162,8 @@ impl Interpreter {
                     if self.memory[self.register.mp()] == Fr::from((1 << self.bits) - 1) {
                         self.memory[self.register.mp()] = Fr::zero()
                     } else {
-                        self.memory[self.register.mp()] = self.memory[self.register.mp()] + Fr::one();
+                        self.memory[self.register.mp()] =
+                            self.memory[self.register.mp()] + Fr::one();
                     }
                     self.register.instruction_pointer += Fr::one();
                 }
@@ -169,7 +171,8 @@ impl Interpreter {
                     if self.memory[self.register.mp()] == Fr::zero() {
                         self.memory[self.register.mp()] = Fr::from((1 << self.bits) - 1)
                     } else {
-                        self.memory[self.register.mp()] = self.memory[self.register.mp()] - Fr::one();
+                        self.memory[self.register.mp()] =
+                            self.memory[self.register.mp()] - Fr::one();
                     }
                     self.register.instruction_pointer += Fr::one();
                 }
@@ -180,7 +183,10 @@ impl Interpreter {
                     self.register.instruction_pointer += Fr::one();
                 }
                 code::PUTCHAR => {
-                    self.matrix.output_matrix.push(self.register.memory_value);
+                    self.matrix.output_matrix.push(IOMatrixRow {
+                        cycle: self.register.cycle,
+                        value: self.register.memory_value,
+                    });
                     self.register.instruction_pointer += Fr::one();
                 }
                 code::LB => {
@@ -218,10 +224,18 @@ impl Interpreter {
             };
         }
         self.matrix.processor_matrix.push(self.register.clone());
-        self.matrix.memory_matrix.push(MemoryMatrixRow::from(&self.register));
-        self.matrix.instruction_matrix.push(InstructionMatrixRow::from(&self.register));
-        self.matrix.instruction_matrix.sort_by_key(|row| row.instruction_pointer);
-        self.matrix.memory_matrix.sort_by_key(|row| row.memory_pointer);
+        self.matrix
+            .memory_matrix
+            .push(MemoryMatrixRow::from(&self.register));
+        self.matrix
+            .instruction_matrix
+            .push(InstructionMatrixRow::from(&self.register));
+        self.matrix
+            .instruction_matrix
+            .sort_by_key(|row| row.instruction_pointer);
+        self.matrix
+            .memory_matrix
+            .sort_by_key(|row| row.memory_pointer);
 
         // Append dummy memory rows
         // let mut i = 1;
