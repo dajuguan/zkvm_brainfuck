@@ -136,7 +136,7 @@ impl<const RANGE: usize> ProcessorTable<RANGE> {
                     + (one.clone() - mv_iszero.clone())
                         * (cur_mv.clone() * (next_ip.clone() - cur_ni.clone())));
 
-            //--------------------------------memory pointer constraints part-----------------------------//
+            //--------------------------------Memory pointer constraints part-----------------------------//
             // ADD:+, SUB:-, LB:[, RB:], GETCHAR:, PUTCHAR share the same p2 condition:
             // memory pointer stay at the same
             let expr2 = (deselectors[ADD].clone()
@@ -154,7 +154,7 @@ impl<const RANGE: usize> ProcessorTable<RANGE> {
             let expr_shr =
                 deselectors[SHR].clone() * (next_mp.clone() - cur_mp.clone() - one.clone());
 
-            //--------------------------------memory value constraints part-----------------------------//
+            //--------------------------------Memory value constraints part-----------------------------//
             // LB, RB, PUTCHAR share the same p3 condition:
             // memory value stay at the same
             let expr3 =

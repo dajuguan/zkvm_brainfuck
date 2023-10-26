@@ -23,11 +23,39 @@ impl<const RANGE: usize> MainConfig<RANGE> {
         let mem_conf = MemoryTable::configure(meta);
         let ins_conf = InstructionTable::configure(meta);
 
-        // meta.lookup_any("program lookup", |meta|{
-        //     let inst = meta.query_advice(program_conf.current_instruction, Rotation::cur());
-        //     let cur_ins = meta.query_advice(processor_conf.current_instruction, Rotation::cur());
-        //     vec![(cur_ins,inst)]
-        // });
+        meta.lookup_any("program lookup", |meta| {
+            let program_ci = meta.query_fixed(program_conf.current_instruction, Rotation::cur());
+            let processor_ci =
+                meta.query_advice(processor_conf.current_instruction, Rotation::cur());
+            let program_ip = meta.query_fixed(program_conf.instruction_pointer, Rotation::cur());
+            let processor_ip =
+                meta.query_advice(processor_conf.instruction_pointer, Rotation::cur());
+            let program_ni = meta.query_fixed(program_conf.next_instruction, Rotation::cur());
+            let processor_ni = meta.query_advice(processor_conf.next_instruction, Rotation::cur());
+
+            vec![
+                (program_ci, processor_ci),
+                (program_ip, processor_ip),
+                (program_ni, processor_ni),
+            ]
+        });
+
+        meta.lookup_any("memory lookup", |meta| {
+            let mem_clk = meta.query_advice(mem_conf.clk, Rotation::cur());
+            let processor_clk =
+                meta.query_advice(processor_conf.clk, Rotation::cur());
+            let mem_mp = meta.query_advice(mem_conf.memory_pointer, Rotation::cur());
+            let processor_mp =
+                meta.query_advice(processor_conf.memory_pointer, Rotation::cur());
+            let mem_mv = meta.query_advice(mem_conf.memory_value, Rotation::cur());
+            let processor_mv = meta.query_advice(processor_conf.memory_value, Rotation::cur());
+
+            vec![
+                (mem_clk, processor_clk),
+                (mem_mp, processor_mp),
+                (mem_mv, processor_mv),
+            ]
+        });
 
         MainConfig {
             program_conf,
