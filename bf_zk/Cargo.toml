@@ -15,3 +15,6 @@ halo2curves = "0.4.0"
 plotters = { version = "0.3.0", default-features = true, optional = true }
 tabbycat = { version = "0.1", features = ["attributes"], optional = true }
 
+[features]
+dev-graph = ["halo2_proofs/dev-graph", "plotters", "plotters/bitmap_backend","plotters/bitmap_encoder"]
+

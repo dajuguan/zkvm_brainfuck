@@ -12,9 +12,11 @@ pub struct Matrix {
     pub memory_matrix: Vec<MemoryMatrixRow>,
     pub input_matrix: Vec<Fr>,
     pub output_matrix: Vec<Fr>,
-    pub program: Vec<Fr>,
+    pub program: Vec<InstructionMatrixRow>,
 }
 
+
+#[derive(Debug, Clone)]
 pub struct InstructionMatrixRow {
     pub instruction_pointer: Fr,
     pub current_instruction: Fr,

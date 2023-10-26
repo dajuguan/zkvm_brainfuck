@@ -70,8 +70,46 @@ impl Interpreter {
     }
 
     pub fn set_code(&mut self, code: Vec<Fr>) {
-        self.matrix.program = code.clone();
-        self.code = code;
+        self.code = code.clone();
+        let mut program = vec![];
+        for i in 0..code.len() {
+           
+            if i > 0 && (code[i-1] == ('[' as u64).into() || code[i-1] == (']' as u64).into()) {
+                let ip = code[i].get_lower_128() as usize;
+                let current_instruction = if  ip == code.len() {
+                    Fr::from(0)
+                } else {
+                    code[ip]
+                };
+
+                let next_instruction = if ip + 1 >= code.len() {
+                    Fr::from(0)
+                } else {
+                    code[ip + 1]
+                };
+
+                program.push(InstructionMatrixRow{
+                    instruction_pointer: code[i],
+                    current_instruction,
+                    next_instruction
+                });
+                continue;
+            }
+            let next_instruction = if i == code.len() -1 {
+                Fr::from(0)
+            } else {
+                code[i+1]
+            };
+            program.push(InstructionMatrixRow{
+                instruction_pointer: Fr::from(i as u64),
+                current_instruction: code[i],
+                next_instruction
+            });
+        }
+
+        self.matrix.program = program
+
+
     }
 
     pub fn set_input(&mut self, input: Vec<Fr>) {

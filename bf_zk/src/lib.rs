@@ -1,5 +1,7 @@
+pub mod instruction_table;
+mod is_zero;
 pub mod main_config;
-pub mod program_table;
 pub mod memory_table;
 pub mod processor_table;
-pub mod instruction_table;
+pub mod program_table;
+mod utilts;
