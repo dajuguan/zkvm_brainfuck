@@ -54,4 +54,5 @@ impl From<&Register> for MemoryMatrixRow {
 pub struct IOMatrixRow {
     pub cycle: Fr,
     pub value: Fr,
+    pub diff: Fr,
 }

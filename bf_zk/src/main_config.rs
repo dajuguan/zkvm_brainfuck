@@ -74,6 +74,12 @@ impl<const RANGE: usize> MainConfig<RANGE> {
             ]
         });
 
+        meta.lookup_any("Range-Check: diff in output are within 0-255", |meta| {
+            let diff = meta.query_advice( output_conf.diff, Rotation::cur());
+            let range_val = meta.query_fixed(processor_conf.range_config.table, Rotation::cur());
+            vec![(diff, range_val)]
+        });
+
         MainConfig {
             program_conf,
             processor_conf,

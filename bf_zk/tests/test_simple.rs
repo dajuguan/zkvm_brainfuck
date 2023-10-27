@@ -35,6 +35,7 @@ fn setup_circuit() -> VMCircuit<Fr, 8> {
     let mut vm = Interpreter::new();
     vm.set_code(program);
     vm.run();
+    
     VMCircuit::<Fr, 8> {
         matrix: vm.matrix,
         _marker: PhantomData,
@@ -44,11 +45,15 @@ fn setup_circuit() -> VMCircuit<Fr, 8> {
 #[test]
 fn test_vmcircuit() {
     let k = 9;
-    let vmcircuit = setup_circuit();
+    let mut vmcircuit = setup_circuit();
     let output_val = vmcircuit.matrix.output_matrix.iter().map(|v| v.value).collect::<Vec<Fr>>();
-    println!("output_val: {:?}", output_val);
-    let prover = MockProver::run(k, &vmcircuit, vec![output_val]).unwrap();
+    // println!("output_val: {:?}", output_val);
+    let prover = MockProver::run(k, &vmcircuit, vec![output_val.clone()]).unwrap();
     prover.assert_satisfied();
+
+    vmcircuit.matrix.output_matrix.reverse();
+    let prover = MockProver::run(k, &vmcircuit, vec![output_val]).unwrap();
+    assert!(prover.verify().is_err());
     println!("vm circuit sucessfuly verified!")
 }
 

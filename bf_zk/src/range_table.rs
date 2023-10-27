@@ -9,22 +9,22 @@ pub trait RangeTable {
 
 #[derive(Clone, Debug, Copy)]
 pub struct RangeTableConfig<const RANGE: usize> {
-    pub table: TableColumn,
+    pub table: Column<Fixed>,
 }
 
 impl<const RANGE: usize> RangeTable for RangeTableConfig<RANGE> {
     fn configure(cs: &mut ConstraintSystem<Fr>) -> Self {
-        let table = cs.lookup_table_column();
+        let table = cs.fixed_column();
         Self { table }
     }
 
     fn load_table(&self, layouter: &mut impl Layouter<Fr>) -> Result<(), Error> {
-        layouter.assign_table(
+        layouter.assign_region(
             || "load range-check table",
-            |mut table| {
+            |mut region| {
                 let mut offset = 0;
                 for value in 0 as i64..1 << RANGE {
-                    table.assign_cell(
+                    region.assign_fixed(
                         || "value",
                         self.table,
                         offset,

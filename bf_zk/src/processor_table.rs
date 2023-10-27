@@ -23,7 +23,7 @@ pub struct ProcessorTable<const RANGE: usize> {
     pub mv_iszero_config: IsZeroConfig<Fr>,
     pub s_p: Selector, //selector for processor table
     pub s_b: Selector, //selector for boundary constraints
-    range_config: RangeTableConfig<RANGE>,
+    pub range_config: RangeTableConfig<RANGE>,
 }
 
 fn create_deselecor(ci: Expression<Fr>, op: u8) -> Expression<Fr> {
@@ -102,9 +102,10 @@ impl<const RANGE: usize> ProcessorTable<RANGE> {
             )
         });
 
-        cs.lookup("Range-Check: mv are within 0-255", |meta| {
+        cs.lookup_any("Range-Check: mv are within 0-255", |meta| {
             let mv = meta.query_advice(memory_value, Rotation::cur());
-            vec![(mv, range_config.table)]
+            let range_val =  meta.query_fixed(range_config.table, Rotation::cur());
+            vec![(mv, range_val)]
         });
 
         cs.create_gate("instruction constraints", |meta| {

@@ -183,9 +183,15 @@ impl Interpreter {
                     self.register.instruction_pointer += Fr::one();
                 }
                 code::PUTCHAR => {
+                    let last_clk = match self.matrix.output_matrix.last() {
+                        Some(m) => m.cycle + Fr::one(),
+                        None => self.register.cycle
+                    };
+
                     self.matrix.output_matrix.push(IOMatrixRow {
                         cycle: self.register.cycle,
                         value: self.register.memory_value,
+                        diff:  self.register.cycle - last_clk
                     });
                     self.register.instruction_pointer += Fr::one();
                 }
