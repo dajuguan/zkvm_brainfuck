@@ -1,4 +1,7 @@
-use bf_vm::{code::PUTCHAR, matrix::Matrix};
+use bf_vm::{
+    code::{GETCHAR, PUTCHAR},
+    matrix::Matrix,
+};
 use halo2_proofs::{
     circuit::{layouter, Layouter, Value},
     halo2curves::bn256::Fr,
@@ -7,15 +10,14 @@ use halo2_proofs::{
 };
 
 #[derive(Debug, Clone)]
-pub struct OutputTable {
+pub struct InputTable {
     pub clk: Column<Advice>,
-    pub ci: Column<Fixed>,
     pub diff: Column<Advice>, // diff cell must >= 0, it's range checked in processor table
     pub value: Column<Instance>,
     pub s_diff: Selector, //selector for clk check
 }
 
-impl OutputTable {
+impl InputTable {
     pub fn configure(cs: &mut ConstraintSystem<Fr>) -> Self {
         let clk = cs.advice_column();
         let ci = cs.fixed_column();
@@ -28,7 +30,7 @@ impl OutputTable {
         cs.enable_equality(value);
         cs.enable_equality(diff);
 
-        cs.create_gate("next clk > clk", |meta| {
+        cs.create_gate("input table next clk > clk", |meta| {
             let cur_clk = meta.query_advice(clk, Rotation::cur());
             let next_clk = meta.query_advice(clk, Rotation::next());
             let diff = meta.query_advice(diff, Rotation::next());
@@ -36,9 +38,8 @@ impl OutputTable {
             vec![s * (cur_clk + Expression::Constant(Fr::one()) + diff - next_clk)]
         });
 
-        OutputTable {
+        InputTable {
             clk,
-            ci,
             value,
             diff,
             s_diff,
@@ -46,33 +47,26 @@ impl OutputTable {
     }
 
     pub fn load(&mut self, mut layouter: impl Layouter<Fr>, matrix: &Matrix) -> Result<(), Error> {
-        let output_mat = &matrix.output_matrix;
+        let input_mat = &matrix.input_matrix;
         layouter.assign_region(
-            || "output table",
+            || "input table",
             |mut region| {
-                for i in 0..output_mat.len() {
-                    if i < output_mat.len() - 1 {
+                for i in 0..input_mat.len() {
+                    if i < input_mat.len() - 1 {
                         self.s_diff.enable(&mut region, i)?;
                     }
                     region.assign_advice(
                         || "clk cell",
                         self.clk,
                         i,
-                        || Value::known(output_mat[i].cycle),
-                    )?;
-
-                    region.assign_fixed(
-                        || "ci cell",
-                        self.ci,
-                        i,
-                        || Value::known(Fr::from(PUTCHAR as u64)),
+                        || Value::known(input_mat[i].cycle),
                     )?;
 
                     region.assign_advice(
                         || "diff cell",
                         self.diff,
                         i,
-                        || Value::known(output_mat[i].diff),
+                        || Value::known(input_mat[i].diff),
                     )?;
                 }
                 Ok(())

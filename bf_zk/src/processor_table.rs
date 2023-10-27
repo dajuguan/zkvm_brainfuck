@@ -104,7 +104,7 @@ impl<const RANGE: usize> ProcessorTable<RANGE> {
 
         cs.lookup_any("Range-Check: mv are within 0-255", |meta| {
             let mv = meta.query_advice(memory_value, Rotation::cur());
-            let range_val =  meta.query_fixed(range_config.table, Rotation::cur());
+            let range_val = meta.query_fixed(range_config.table, Rotation::cur());
             vec![(mv, range_val)]
         });
 
@@ -279,7 +279,6 @@ impl<const RANGE: usize> ProcessorTable<RANGE> {
             },
         )?;
 
-       
         Ok(())
     }
 }

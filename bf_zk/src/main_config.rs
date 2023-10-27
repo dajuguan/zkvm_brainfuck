@@ -1,6 +1,4 @@
-use std::marker::PhantomData;
-
-use crate::instruction_table::InstructionTable;
+use crate::input_table::InputTable;
 use crate::memory_table::MemoryTable;
 use crate::output_table::OutputTable;
 use crate::processor_table::ProcessorTable;
@@ -9,14 +7,15 @@ use crate::utilts::PUTCHAR;
 use bf_vm::matrix::Matrix;
 use halo2_proofs::arithmetic::Field;
 use halo2_proofs::{circuit::*, halo2curves::bn256::Fr, plonk::*, poly::Rotation};
+use std::marker::PhantomData;
 
 #[derive(Debug, Clone)]
 pub struct MainConfig<const RANGE: usize> {
     program_conf: ProgramTable,
     processor_conf: ProcessorTable<RANGE>,
     mem_conf: MemoryTable,
-    ins_conf: InstructionTable,
     output_conf: OutputTable,
+    input_conf: InputTable,
 }
 
 impl<const RANGE: usize> MainConfig<RANGE> {
@@ -24,8 +23,8 @@ impl<const RANGE: usize> MainConfig<RANGE> {
         let program_conf = ProgramTable::configure(meta);
         let processor_conf = ProcessorTable::configure(meta);
         let mem_conf = MemoryTable::configure(meta);
-        let ins_conf = InstructionTable::configure(meta);
         let output_conf = OutputTable::configure(meta);
+        let input_conf = InputTable::configure(meta);
 
         meta.lookup_any("program lookup", |meta| {
             let program_ci = meta.query_fixed(program_conf.current_instruction, Rotation::cur());
@@ -74,8 +73,22 @@ impl<const RANGE: usize> MainConfig<RANGE> {
             ]
         });
 
+        meta.lookup_any("input lookup", |meta| {
+            let processor_clk = meta.query_advice(processor_conf.clk, Rotation::cur());
+            let input_clk = meta.query_advice(input_conf.clk, Rotation::cur());
+            let processor_mv = meta.query_advice(processor_conf.memory_value, Rotation::cur());
+            let input_val = meta.query_instance(input_conf.value, Rotation::cur());
+            vec![(input_clk, processor_clk), (input_val, processor_mv)]
+        });
+
         meta.lookup_any("Range-Check: diff in output are within 0-255", |meta| {
-            let diff = meta.query_advice( output_conf.diff, Rotation::cur());
+            let diff = meta.query_advice(output_conf.diff, Rotation::cur());
+            let range_val = meta.query_fixed(processor_conf.range_config.table, Rotation::cur());
+            vec![(diff, range_val)]
+        });
+
+        meta.lookup_any("Range-Check: diff in input are within 0-255", |meta| {
+            let diff = meta.query_advice(input_conf.diff, Rotation::cur());
             let range_val = meta.query_fixed(processor_conf.range_config.table, Rotation::cur());
             vec![(diff, range_val)]
         });
@@ -84,8 +97,8 @@ impl<const RANGE: usize> MainConfig<RANGE> {
             program_conf,
             processor_conf,
             mem_conf,
-            ins_conf,
             output_conf,
+            input_conf,
         }
     }
 
@@ -96,10 +109,10 @@ impl<const RANGE: usize> MainConfig<RANGE> {
             .load(layouter.namespace(|| "processor layouter"), matrix)?;
         self.mem_conf
             .load(layouter.namespace(|| "memory layouter"), matrix)?;
-        self.ins_conf
-            .load(layouter.namespace(|| "instuction layouter"), matrix)?;
         self.output_conf
             .load(layouter.namespace(|| "output layouter"), matrix)?;
+        self.input_conf
+            .load(layouter.namespace(|| "input layouter"), matrix)?;
         Ok(())
     }
 }

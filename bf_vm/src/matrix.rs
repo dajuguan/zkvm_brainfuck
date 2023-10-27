@@ -10,7 +10,7 @@ pub struct Matrix {
     pub processor_matrix: Vec<Register>,
     pub instruction_matrix: Vec<InstructionMatrixRow>,
     pub memory_matrix: Vec<MemoryMatrixRow>,
-    pub input_matrix: Vec<Fr>,
+    pub input_matrix: Vec<IOMatrixRow>,
     pub output_matrix: Vec<IOMatrixRow>,
     pub program: Vec<InstructionMatrixRow>,
 }

@@ -179,19 +179,30 @@ impl Interpreter {
                 code::GETCHAR => {
                     let val = self.input.remove(0);
                     self.memory[self.register.mp()] = val;
-                    self.matrix.input_matrix.push(val);
+
+                    let last_clk = match self.matrix.input_matrix.last() {
+                        Some(m) => m.cycle + Fr::one(),
+                        None => self.register.cycle,
+                    };
+
+                    self.matrix.input_matrix.push(IOMatrixRow {
+                        cycle: self.register.cycle + Fr::one(),
+                        value: val,
+                        diff: self.register.cycle - last_clk,
+                    });
+
                     self.register.instruction_pointer += Fr::one();
                 }
                 code::PUTCHAR => {
                     let last_clk = match self.matrix.output_matrix.last() {
                         Some(m) => m.cycle + Fr::one(),
-                        None => self.register.cycle
+                        None => self.register.cycle,
                     };
 
                     self.matrix.output_matrix.push(IOMatrixRow {
                         cycle: self.register.cycle,
                         value: self.register.memory_value,
-                        diff:  self.register.cycle - last_clk
+                        diff: self.register.cycle - last_clk,
                     });
                     self.register.instruction_pointer += Fr::one();
                 }

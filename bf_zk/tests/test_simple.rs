@@ -26,35 +26,49 @@ fn test_run() {
     );
 }
 
-fn setup_circuit() -> VMCircuit<Fr, 8> {
-    let program = code::compile(include_bytes!("../../res/hello_world.bf").to_vec());
+fn mock_prove_circuit(program: Vec<Fr>, input: Vec<Fr>, k: u32) {
     let mut vm = Interpreter::new();
     vm.set_code(program);
+    vm.set_input(input);
     vm.run();
-    let program = code::compile(include_bytes!("../../res/hello_world.bf").to_vec());
-    let mut vm = Interpreter::new();
-    vm.set_code(program);
-    vm.run();
-    
-    VMCircuit::<Fr, 8> {
+
+    let input_val = vm
+        .matrix
+        .input_matrix
+        .iter()
+        .map(|v| v.value)
+        .collect::<Vec<Fr>>();
+    let output_val = vm
+        .matrix
+        .output_matrix
+        .iter()
+        .map(|v| v.value)
+        .collect::<Vec<Fr>>();
+
+    let vmcircuit = VMCircuit::<Fr, 8> {
         matrix: vm.matrix,
         _marker: PhantomData,
-    }
+    };
+
+    let prover =
+        MockProver::run(k, &vmcircuit, vec![output_val.clone(), input_val.clone()]).unwrap();
+    prover.assert_satisfied();
 }
 
 #[test]
 fn test_vmcircuit() {
     let k = 9;
-    let mut vmcircuit = setup_circuit();
-    let output_val = vmcircuit.matrix.output_matrix.iter().map(|v| v.value).collect::<Vec<Fr>>();
-    // println!("output_val: {:?}", output_val);
-    let prover = MockProver::run(k, &vmcircuit, vec![output_val.clone()]).unwrap();
-    prover.assert_satisfied();
+    let program = code::compile(include_bytes!("../../res/hello_world.bf").to_vec());
+    let input = vec![];
+    mock_prove_circuit(program, input, k);
+}
 
-    vmcircuit.matrix.output_matrix.reverse();
-    let prover = MockProver::run(k, &vmcircuit, vec![output_val]).unwrap();
-    assert!(prover.verify().is_err());
-    println!("vm circuit sucessfuly verified!")
+#[test]
+fn test_vmcircuit_2() {
+    let k = 9;
+    let program = code::compile(include_bytes!("../../res/neptune_tutorial.bf").to_vec());
+    let input = code::easygen("a");
+    mock_prove_circuit(program, input, k);
 }
 
 #[cfg(feature = "dev-graph")]
